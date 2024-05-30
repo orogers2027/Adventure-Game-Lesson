@@ -19,6 +19,7 @@ TOP_EDGE=350
 DO_NOTHING=-1
 PRINT_STATEMENT=0
 ASK_FOR_INPUT=1
+PAUSE_TIL_RIGHT=2
 
 PATH=0
 WALL=1
@@ -36,10 +37,20 @@ DECODE=10
 powerUpTurn=5  #how many turns they have if they find the power up
 gamePlay=False #start the game loop as false because we ask if they want to play
 power=False    #start the power up as false because they do not start with the power up
+decode=True    #start with the decoder on so that they can guess
+
+def encriptString(string):
+    s2=""
+    for char in range(len(s1)):
+        s2Char=ord(string[char])
+        s2Char=s2Char+3
+        s2=s2+(chr(s2Char))
+    return(s2)
+
 
 #for encription and decription 
-s1="YOU FIGURED IT OUT"  #they must decode this phrase which will be mixed up
-s2= ""
+s1="you figured it out"  #they must decode this phrase which will be mixed up
+s2=encriptString(s1)    #This is going to be the mixed up phrase which they will have to decode
 
 
 #list of players inventory
@@ -55,7 +66,7 @@ Map = [
             [ 1, 1, 1, 1, 4, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1, 1],
             [ 1, 1, 1, 1, 2, 4, 4, 4, 4, 1, 0, 0, 0, 7, 8, 1],
 	    [ 1, 0, 0, 1, 10, 1, 4, 4, 1, 0, 0, 0, 0, 7, 8, 1],
-	    [ 1, 0, 6, 1, 3, 0, 4, 4, 1, 0, 0, 0, 0, 7, 8, 1],
+	    [ 1, 0, 6, 1, 3, 1, 4, 4, 1, 0, 0, 0, 0, 7, 8, 1],
 	    [ 1, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 7, 8, 1],
 	    [ 1, 0, 1, 0, 1, 0, 4, 4, 0, 0, 0, 0, 0, 7, 8, 1],
 	    [ 1, 0, 1, 0, 1, 0, 4, 4, 0, 0, 0, 0, 0, 7, 8, 1],
@@ -79,9 +90,9 @@ eventList= [[DO_NOTHING, 0, "peru", "You are on the path","   "],
 	    [PRINT_STATEMENT, 5,"red", "You found fruit.","@  "],
             [PRINT_STATEMENT, 6, "peru","You found a power up that shows you where all the planks are hiding, but it only lasts for 5 moves,","   "], #if they land on this square, which has a 50% chance of spawning, they are able to see all the planks for 3 moves 
             [ASK_FOR_INPUT, 7, "darkgreen", "There is an ogre blocking your path, you must feed him 5 apples to pass,", "): " ,"Do you want to give the ogre your apples to pass? y/n"],
-            [PRINT_STATEMENT, 8, "peru","YOU WIN!!!","   "], #if they make it to the spots that are equal to 8, you win            
+            [PRINT_STATEMENT, 8, "peru","YOU WIN!!!, press enter to end game","   "], #if they make it to the spots that are equal to 8, you win            
             [DO_NOTHING, 9, "white", "This is where you are.", "* "],
-            [PRINT_STATEMENT, 10, "yellow", "You mush decode:",s2,"It is incripted by a shifter of 3.","   "]
+            [PAUSE_TIL_RIGHT, 10, "peru", ("You mush decode: "+ s2+  " It is incripted by a shifter of 3.") ,"   "]
             ]
 
 
@@ -91,16 +102,7 @@ sidelen=700/len(Map[0])  #same as the one above but size is based on how many co
 
 ##FUNCTIONS##
 
-def encriptString(string):
-    global s2
-    for char in range(len(s1)):
-        s2Char=ord(string[char])
-        s2Char=s2Char-3
-        s2=s2+(chr(s2Char))
-        if Map[currX][currY]==DECODE:
-            print(chr(s2Char), end="")
-    print()
-    return(s2)
+
 
 def draw_box(row,col,x,y): #draws individual squares for graphical map
     t.seth(0)
@@ -141,7 +143,7 @@ def starting_statements():
     print("Find planks hidden around the map to build a bridge to cross the river safely")
     print("If you are lucky, you may find a power up that shows you where the planks are hidden.")
     print("Collect 5 apples (@) to satisfy the ogre ): so he will let you pass.")
-    print("You are the white square or *")
+    print("You are the white square, the red squares are apples, blue is the river, and green in the ogres.")
     print()
     gameStart=input("Are you ready to play? y/n")
     return(gameStart)
@@ -200,7 +202,7 @@ def movePlayer(x,y,moveDir):
 
 #check to see if the space the player is on is a special event besides wall or path
 def check_Event (x, y):
-    global currX, gamePlay
+    global currX, gamePlay, decode
     if Map[y][x]!=-1 and Map[y][x]!=0:
         
         if Map[y][x]==RIVER:
@@ -253,7 +255,22 @@ def check_Event (x, y):
                 player_decode()
             if Map[y][x]==WINGAME: #if they make it to an 8 they win
                 gamePlay=False
-                return(gamePlay)                 
+                return(gamePlay)
+
+
+
+        if eventList[Map[y][x]][0]==PAUSE_TIL_RIGHT:
+            print(eventList[Map[y][x]][3])
+            print("# stand for spaces and | stands for y")
+            while decode==True:
+                guess=(input("What is your guess:"))
+                if guess==s1:
+                    print("That's right")
+                    Map[y][x]=0
+                    decode=False
+                else:
+                    print("Wrong, try again")
+                print()   
     return
 
 def player_decode():
@@ -267,7 +284,7 @@ def player_decode():
 #a function that adds fruit into random places around the left half of  map		
 def add_fruit():
     #to place the appples randomly
-    random_y_apple= random.randint(2,len(Map)-2)
+    random_y_apple= random.randint(5,len(Map)-3)
     random_x_apple= random.randint(1,5)
     Map[random_y_apple][random_x_apple]=5
 
@@ -275,7 +292,7 @@ def add_fruit():
 #a function that adds planks into random places around the left half of map    
 def add_planks():
     # to place the planks randomly
-    random_y_plank= random.randint(2,len(Map)-3)
+    random_y_plank= random.randint(5,len(Map)-3)
     random_x_plank= random.randint(1,5)
     Map[random_y_plank][random_x_plank]=2
     
@@ -297,7 +314,7 @@ def print_inventory():
     for x in range(0,len(inventory)):
         print("you have", inventory[x][1],inventory[x][0])
         t.pendown()
-        t.write((inventory[x][0],":",inventory[x][1]), font=("Comic Sans", 25,"normal"))
+        t.write((inventory[x][0]+": ",inventory[x][1]), font=("Comic Sans", 25,"normal"))
         t.penup()
         t.goto(0,TOP_EDGE)
         t.penup()
@@ -314,10 +331,10 @@ def place_power_up():
 def power_up(x,y):
     global powerUpTurn,power
 
-    if Map[y][x]==POWERUP:
+    if Map[y][x]==POWERUP:  #If you are on the powerup
         print(eventList[Map[y][x]][2])
         Map[y][x]=0
-        eventList[PLANK][2]="black"
+        eventList[PLANK][2]="black" #the planks will appear as a black square
         power=True
         
     if power==True:
@@ -337,6 +354,7 @@ def power_up(x,y):
 currX = 1
 currY = 4
 
+
 #start the game if they want to play
 game=starting_statements()
 if game=="y":
@@ -354,7 +372,6 @@ for planks in range(0,4):
 #draw the map the first time before asking for a move
 drawMap(currX, currY)
 screen.tracer(0)
-encriptString(s1)
 
 
 #Let the player move around the map on the path until they reach the end of the game
@@ -367,4 +384,3 @@ while gamePlay==True:
     moveDir = input("Enter direction (u,d,l,r): ")
     currX, currY = movePlayer(currX, currY, moveDir)
     drawMap(currX, currY)
-    print(s2)
