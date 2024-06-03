@@ -205,6 +205,7 @@ def drawMap(currX, currY):  #text game map
 #check to see if the space the player is on is a special event besides wall or path
 def check_Event (x, y):
     global currX, gamePlay, decode
+    
     if Map[y][x]!=-1 and Map[y][x]!=0:
         
         if Map[y][x]==RIVER: #check if they are in the river
@@ -251,19 +252,28 @@ def check_Event (x, y):
                 inventory[Map[y][x]-1][1]=inventory[Map[y][x]-1][1]+1 
                 Map[y][x]=0
                 return
+            else:
+                Map[y][x]=0
+                add_planks()#if they say no it will get rid of that plank and randomly place it somewhere else
+                #(to fix an issue I had earlier where it would keep asking til you said yes to picking up the plank)
                 
             return
             
         if eventList[Map[y][x]][0]==PRINT_STATEMENT: #if first object in list is PRINT_STATEMENT
+            #whatPrint=eventList[Map[y][x]][3]
             print(eventList[Map[y][x]][3])
+            #turtle.textinput("Print",whatPrint)
+            #I decided not to have it print when you collected fruit because it got annoying the little screen popping up
+            #also if I had left this in, when you go on the door a screen, that you can't get rid of, pops up saying that you've come to a door.
+            #the reason this happens is cause when you go over the fruit that spot becomes 0, but when you go over the door it stays a door,
+            #so it just keeps printing that you came to a door.
+
             
             if Map[x][y]==DECODE:
                 player_decode()
             if Map[y][x]==WINGAME: #if they make it to an 8 they win
                 gamePlay=False
                 return(gamePlay)
-
-
 
         if eventList[Map[y][x]][0]==PAUSE_TIL_RIGHT:
             wordss=eventList[Map[y][x]][3]
@@ -278,6 +288,7 @@ def check_Event (x, y):
                     print("Wrong, try again")
                 print()   
     return
+
 
 def player_decode():
     print("You must decode,", s2)
@@ -340,16 +351,19 @@ def power_up(x,y):
     global powerUpTurn,power
 
     if Map[y][x]==POWERUP:  #If you are on the powerup
-        print(eventList[Map[y][x]][2])
+        powerUp=eventList[Map[y][x]][3]
+        turtle.textinput("Power Up", powerUp)
         Map[y][x]=0
         eventList[PLANK][2]="black" #the planks will appear as a black square
         power=True
         
     if power==True:
+        turnsleft=powerUpTurn
+        #turtle.textinput("Power Up Moves Left:",powerUpTurn) #I decided not to add this either because it would pop up before you character moved, and it was kind of annoying
         print("you have",powerUpTurn,"moves left for your power up.") #each turn it will print how many moves you have before power up goes away
         powerUpTurn=powerUpTurn-1
         if powerUpTurn<0: #once there are no  more turns left, the planks are invisible again
-            power=False 
+            power=False   #so that they can no longer see the planks
             eventList[PLANK][2]="peru" #they go back to being the same color as the 
         return
     return
@@ -358,7 +372,7 @@ def power_up(x,y):
 def movePlayerR():
     global currX,currY
     if Map[currY][currX+1] != 1:
-        power_up(currX,currY)
+        power_up(currX,currY) #to check if they got the power up (it won't work if you just put it in the check collisions or check event function)
         player.seth(0) #right
         player.forward(sidelen) #moves right the width of each box
         currX=currX+1
@@ -368,17 +382,17 @@ def movePlayerR():
 def movePlayerL():
     global currX,currY
     if Map[currY][currX-1] != 1:
-        power_up(currX,currY)
+        power_up(currX,currY)  #to check if they got the power up
         player.seth(180) #left
         player.forward(sidelen) #moves left the width of each box
-        currX=currX-1
+        currX=currX-1 
     return
 
 #function to move player up
 def movePlayerU():
     global currX,currY
     if Map[currY-1][currX] != 1:
-        power_up(currX,currY)
+        power_up(currX,currY) #to check if they got the power up
         player.seth(90) #up
         player.forward(sideheight) #moves up the length of each box
         currY=currY-1
@@ -388,7 +402,7 @@ def movePlayerU():
 def movePlayerD():
     global currX,currY
     if Map[currY+1][currX] != 1:
-        power_up(currX,currY)
+        power_up(currX,currY) #to check if they got the power up
         player.seth(270) #down
         player.forward(sideheight) #moves down the length of each box
         currY=currY+1
@@ -435,7 +449,7 @@ player=Turtle()
 player.shape("square")
 player.color("white")
 player.penup()
-player.shapesize(stretch_wid=sidelen/20-1, stretch_len=sideheight/20-1)
+player.shapesize(stretch_wid=sidelen/20-1, stretch_len=sideheight/20-1) #to fit the size of the squares on my specific map
 
 
 #Let the player move around the map on the path until they reach the end of the game
@@ -444,6 +458,12 @@ while gamePlay==True: #if they say yes to playing the game
     draw_turtle_map() #draw the actual map
     player.goto(((LEFT_EDGE+sidelen*currX)+sidelen/2),(TOP_EDGE-sideheight*(currY+1)+(sideheight/2))) #moves the player based on the currX and currY
     check_Event(currX,currY)  #checks if they are in an event square
-    screen.update()
     check_collisions(currX,currY) #checks if they collided w anything
+    screen.update()
+    
     print_inventory() #prints their inventory
+
+screen.clear()
+turtle.penup()
+turtle.goto(-125,0)
+turtle.write("YOU WIN!!",font=("Times New Roman",50))
